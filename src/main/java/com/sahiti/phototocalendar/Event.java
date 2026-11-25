@@ -83,14 +83,13 @@ public class Event {
             this.abbZone = "PST"; 
             this.timeZone = "America/Los_Angeles";
         } else {
-            this.timeZone = ZoneId.of(abbZone.trim()).toString();
-            this.abbZone = this.timeZone;
+            System.out.println("Invalid time zone. Please enter EST, CST, MST or PST.");
         }
     }
 
     @Override 
     public String toString() {
-        return "\n" + "Event: " + event + "\n" + "Location: " + location + "\n" + "Date: " + date + "\n" + "Time: " + time + "\n" + "Time Zone: " + abbZone + "\n";
+        return "\n" + "1. Event: " + event + "\n" + "2. Location: " + location + "\n" + "3. Date: " + date + "\n" + "4. Time: " + time + "\n" + "5. Time Zone: " + abbZone + "\n";
 
     }
 

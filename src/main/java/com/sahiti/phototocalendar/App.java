@@ -24,6 +24,7 @@ public class App {
         String event = "";
         String zone = "";
         String zoneID = "";
+        Event info = null;
 
 
         
@@ -134,7 +135,7 @@ public class App {
                                 location = ml3.group().trim();
                             } 
 
-                            Event info = new Event(event, date, time, location);
+                            info = new Event(event, date, time, location);
                             zoneID = info.getZone();
                             zone = info.getAbb();                            
 
@@ -163,6 +164,58 @@ public class App {
 
 
         } while (cont);
+
+        //now cont is false
+
+        if (!end) {
+            System.out.println(info.toString());
+            System.out.println("You may now edit. Make sure to fill in empty fields.");
+            try {
+                
+                do {
+                    cont = true;
+                    System.out.println("Enter 1, 2, 3, 4, 5 or x to exit: ");
+                    String num = myScanner.nextLine().toLowerCase().trim();
+                    if (num.equals("x")) {
+                        cont = false;
+                    } else if (!num.equals("1") && !num.equals("2") && !num.equals("3") && !num.equals("4") && !num.equals("5")) {
+                        System.out.println("Must enter a number from 1-5");
+                    } else if (num.equals("1")) {
+                        System.out.print("Event: ");
+                        event = myScanner.nextLine();
+                        info.setEvent(event);
+                    } else if (num.equals("2")) {
+                        System.out.print("Location: ");
+                        location = myScanner.nextLine();
+                        info.setLocation(location);
+                    } else if (num.equals("3")) {
+                        System.out.print("Date: ");
+                        date = myScanner.nextLine();
+                        info.setDate(date);
+                    } else if (num.equals("4")) {
+                        System.out.print("Time: ");
+                        time = myScanner.nextLine();
+                        info.setTime(time);
+                    } else if (num.equals("5")) {
+                        System.out.print("Time Zone: ");
+                        zone = myScanner.nextLine().trim().toUpperCase();
+                        info.setAbb(zone);
+                        
+                    }
+                    if (cont) {
+                        System.out.println(info.toString());
+                    }
+                    
+                } while (cont);
+            } catch (NoSuchElementException e) {
+                System.out.println("Exited program.");
+                cont = false;
+                end = true;
+
+            }
+            
+        }
+    
 
         
     }
