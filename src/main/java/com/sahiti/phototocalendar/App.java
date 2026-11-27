@@ -250,7 +250,7 @@ public class App {
                         String s = dateValidation(info);
                         if (!s.equals("")) {
                             info.setDate(oldDate);
-                            if (askYesNo(myScanner, s + ". Back to editing?")) {
+                            if (askYesNo(myScanner, s + " Back to editing?")) {
                                 cont = true;
                                 
                             } else {
@@ -269,7 +269,7 @@ public class App {
                         String s = timeValidation(info);
                         if (!s.equals("")) {
                             info.setTime(oldTime);
-                            if (askYesNo(myScanner, s + ". Back to editing?")) {
+                            if (askYesNo(myScanner, s + " Back to editing?")) {
                                 cont = true;
                                 
                             } else {
@@ -309,6 +309,20 @@ public class App {
 
             }
             
+        }
+
+        if (!end) {
+            try {
+                CalendarExport exporter = new CalendarExport(info);
+
+                String downloadsFolder = System.getProperty("user.home") + "/Downloads/event.ics";
+                exporter.exportCalendar(downloadsFolder);
+                
+                System.out.println("Event successfully exported to: " + downloadsFolder);
+               
+            } catch (Exception e) {
+                System.out.println("Failed to export calendar: " + e.getMessage());
+            }
         }
     
 
