@@ -2,10 +2,19 @@ package com.sahiti.phototocalendar;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.io.File;
+
+import net.fortuna.ical4j.model.DateTime;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
+import java.time.LocalTime;
+import java.time.DateTimeException;
+
 
 
 
@@ -137,7 +146,9 @@ public class App {
 
                             info = new Event(event, date, time, location);
                             zoneID = info.getZone();
-                            zone = info.getAbb();                            
+                            zone = info.getAbb();    
+                            dateValidation(info);
+                            timeValidation(info);                        
 
                         }
                     } catch (TesseractException e) {
@@ -165,7 +176,7 @@ public class App {
 
         } while (cont);
 
-        //now cont is false
+       
 
         if (!end) {
             System.out.println(info.toString());
@@ -174,33 +185,117 @@ public class App {
                 
                 do {
                     cont = true;
-                    System.out.println("Enter 1, 2, 3, 4, 5 or x to exit: ");
+                    System.out.println("Enter 1, 2, 3, 4, 5 or x to confirm and exit: ");
                     String num = myScanner.nextLine().toLowerCase().trim();
                     if (num.equals("x")) {
-                        cont = false;
+                        String s = emptyValidation(info);
+                        if (s.equals("")) {
+                            s = dateValidation(info);
+                        }
+                        if (s.equals("")) {
+                            s = timeValidation(info);
+                        }
+
+                        if (!s.equals("")) {
+                            if (askYesNo(myScanner, s + " Back to editing?")) {
+                                cont = true;
+                                
+                            } else {
+                                cont = false;
+                                end = true;
+                                System.out.println("Exited program.");
+                            }
+                        } else {
+                            cont = false;
+                        }
                     } else if (!num.equals("1") && !num.equals("2") && !num.equals("3") && !num.equals("4") && !num.equals("5")) {
-                        System.out.println("Must enter a number from 1-5");
+                        System.out.println("Must enter a number from 1-5.");
                     } else if (num.equals("1")) {
                         System.out.print("Event: ");
                         event = myScanner.nextLine();
-                        info.setEvent(event);
+                        if (event.isBlank()) {
+                            if (askYesNo(myScanner, "Event can't be empty. Back to editing?")) {
+                                cont = true;
+                                
+                            } else {
+                                cont = false;
+                                end = true;
+                                System.out.println("Exited program.");
+                            }
+                        } else {
+                            cont = true;
+                            info.setEvent(event);
+                        }
                     } else if (num.equals("2")) {
                         System.out.print("Location: ");
                         location = myScanner.nextLine();
-                        info.setLocation(location);
+                        if (location.isBlank()) {
+                            if (askYesNo(myScanner, "Location can't be empty. Back to editing?")) {
+                                cont = true;
+                                
+                            } else {
+                                cont = false;
+                                end = true;
+                                System.out.println("Exited program.");
+                            }
+                        } else {
+                            cont = true;
+                            info.setLocation(location);
+                        }
                     } else if (num.equals("3")) {
                         System.out.print("Date: ");
                         date = myScanner.nextLine();
+                        String oldDate = info.getDate();
                         info.setDate(date);
+                        String s = dateValidation(info);
+                        if (!s.equals("")) {
+                            info.setDate(oldDate);
+                            if (askYesNo(myScanner, s + ". Back to editing?")) {
+                                cont = true;
+                                
+                            } else {
+                                cont = false;
+                                end = true;
+                                System.out.println("Exited program.");
+                            }
+                        } else {
+                            cont = true;
+                        }
                     } else if (num.equals("4")) {
                         System.out.print("Time: ");
                         time = myScanner.nextLine();
+                        String oldTime = info.getTime();
                         info.setTime(time);
+                        String s = timeValidation(info);
+                        if (!s.equals("")) {
+                            info.setTime(oldTime);
+                            if (askYesNo(myScanner, s + ". Back to editing?")) {
+                                cont = true;
+                                
+                            } else {
+                                cont = false;
+                                end = true;
+                                System.out.println("Exited program.");
+                            }
+                        } else {
+                            cont = true;
+                        }
                     } else if (num.equals("5")) {
                         System.out.print("Time Zone: ");
                         zone = myScanner.nextLine().trim().toUpperCase();
-                        info.setAbb(zone);
-                        
+                        if (zone.isBlank()) {
+                            if (askYesNo(myScanner, "Timezone can't be empty. Back to editing?")) {
+                                cont = true;
+                                
+                            } else {
+                                cont = false;
+                                end = true;
+                                System.out.println("Exited program.");
+                            }
+                        } else {
+                            cont = true;
+                            info.setAbb(zone);
+                        }                        
                     }
                     if (cont) {
                         System.out.println(info.toString());
@@ -235,8 +330,174 @@ public class App {
         String text = tesseract.doOCR(image);
         return text;
 
+    }
+
+    static String emptyValidation(Event info) {
+        if (info.getEvent().isBlank()) {
+            return "Event title can't be empty.";
+        } else if (info.getDate().isBlank()) {
+            return "Date can't be empty";
+        }  else if (info.getTime().isBlank()) {
+            return "Time can't be empty.";
+        } else if (info.getLocation().isBlank()) {
+            return "Location can't be empty.";
+        } else if (info.getAbb().isBlank()) {
+            return "Timezone can't be empty.";
+        }
+
+        return "";
+
+    }
+
+    static String dateValidation(Event info) {
+        String fixedDate = info.getDate().replaceAll("(?i)(\\d)(th|st|nd|rd)\\b", "$1");
+        fixedDate = fixedDate.replaceAll("[,\\.]", "");
+        fixedDate = fixedDate.replaceAll("\\s+", " ").trim();
+
         
+        Pattern date1 = Pattern.compile(".*\\d{4}$");
+        Pattern date2 = Pattern.compile(".*\\d\\d$");
+        Pattern date3 = Pattern.compile("^([a-zA-Z]+\\.?\\s*\\d{1,2}|\\d{1,2}/\\d{1,2}|\\d{1,2}\\s*[a-zA-Z]+)$");
+
+        if (!date1.matcher(fixedDate).matches()) {
+            if (date3.matcher(fixedDate).matches()) {
+                if (fixedDate.contains("/")) {
+                    fixedDate += "/" + LocalDate.now().getYear();
+                } else {
+                    fixedDate += " " + LocalDate.now().getYear();
+                }
+            } else if (date2.matcher(fixedDate).matches()) {
+                fixedDate = fixedDate.substring(0, fixedDate.length() - 2) + "20" + fixedDate.substring(fixedDate.length() - 2);
+            } else {
+                return "Date format is invalid";
+            }
+            
+        } 
+
+        LocalDate date = null;
+        String[] formats = {"M/d/yyyy", "M-d-yyyy", "MMMM d yyyy", "MMM d yyyy", "d MMMM yyyy", "d MMM yyyy"};
+        for (String f : formats) {
+            try {
+                DateTimeFormatter formatter = new DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern(f).toFormatter();
+                date = LocalDate.parse(fixedDate, formatter);
+                break;
+            } catch (DateTimeParseException e) {
+
+            }
+        } 
+
+        if (date == null) {
+            return "Date format is invalid";
+        } else {
+            info.setParsedDate(date);
+            info.setDate(date.format(DateTimeFormatter.ofPattern("MMMM d, yyyy")));
+
+        }
+
+        return "";
+
+    }
+
+    static String timeValidation(Event info){
+        String fixedTime = info.getTime().toUpperCase().replaceAll("\\.", "");
+        fixedTime = fixedTime.replaceAll("\\s+", " ").trim();
+
+        String[] parts = fixedTime.split("\\s*(-|–|—|TO)\\s*");
+        
+        if (parts.length != 1 && parts.length != 2) {
+            return "Time format is invalid";
+        } 
+
+        //adding am/pm to first element if missing
+        if (parts.length == 2) {
+            if (!parts[0].endsWith("AM") && !parts[0].endsWith("PM")) {
+                if (!parts[1].endsWith("AM") && !parts[1].endsWith("PM")) {
+                    return "Time must specify indicators: AM/PM";
+                } else if (parts[1].endsWith("AM")) {
+                    parts[0] = parts[0] + "AM";
+                } else if (parts[1].endsWith("PM")) {
+                    parts[0] = parts[0] + "PM";
+                }
+            }
+        } else {
+            if (!parts[0].endsWith("AM") && !parts[0].endsWith("PM")) {
+                return "Time must specify indicators: AM/PM";
+            }
+        }
+
+        //adding space before AM/PM if missing
+        if (parts[0].endsWith("AM") && !parts[0].endsWith(" AM")) {
+            int len = parts[0].length();
+            parts[0] = parts[0].substring(0, len - 2) + " AM";
+            
+        } else if (parts[0].endsWith("PM") && !parts[0].endsWith(" PM")) {
+            int len = parts[0].length();
+            parts[0] = parts[0].substring(0, len - 2) + " PM";
+            
+        }
+
+        if (parts.length == 2) {
+            
+            if (parts[1].endsWith("AM") && !parts[1].endsWith(" AM")) {
+                int len = parts[1].length();
+                parts[1] = parts[1].substring(0, len - 2) + " AM";
+            
+            } else if (parts[1].endsWith("PM") && !parts[1].endsWith(" PM")) {
+                int len = parts[1].length();
+                parts[1] = parts[1].substring(0, len - 2) + " PM";
+            
+            }
+
+            if (!parts[1].endsWith(" AM") && !parts[1].endsWith(" PM")) {
+                return "Time must specify indicators: AM/PM";
+            }
+        }
         
 
+        
+
+        //parsing into date time format 
+        //adding :00 for single times like 10pm
+        try {
+            
+            Pattern digits = Pattern.compile(":\\d{2}"); 
+            Matcher m = digits.matcher(parts[0]);
+        
+            if (!m.find()) {
+                int len = parts[0].length();
+                parts[0] = parts[0].substring(0, len - 3) + ":00" + parts[0].substring(len - 3);
+            }
+
+            if (parts.length == 2) {
+                Matcher m2 = digits.matcher(parts[1]);
+                if (!m2.find()) {
+                    int len = parts[1].length();
+                    parts[1] = parts[1].substring(0, len - 3) + ":00" + parts[1].substring(len - 3);
+                }
+            }
+
+            DateTimeFormatter format = DateTimeFormatter.ofPattern("h:mm a");
+            LocalTime start = LocalTime.parse(parts[0], format);
+            LocalTime end;
+            if (parts.length == 1) {
+                end = start.plusHours(1);
+            } else {
+                end = LocalTime.parse(parts[1], format);
+                if (end.equals(start)) {
+                    return "End time must be different from start time.";
+                }
+            }
+
+           
+            info.setStartTime(start);
+            info.setEndTime(end);
+            info.setTime(start.format(format) + " - " + end.format(format));
+        } catch (DateTimeException e) {
+            return "Time format is invalid";
+        } catch (IndexOutOfBoundsException e) {
+            return "Time format is invalid";
+        }
+
+        return "";
     }
 }

@@ -1,5 +1,7 @@
 package com.sahiti.phototocalendar;
+import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.LocalTime;
 
 
 public class Event {
@@ -9,6 +11,10 @@ public class Event {
     private String location;
     private String timeZone;
     private String abbZone; 
+
+    private LocalDate parsedDate;
+    private LocalTime startTime;
+    private LocalTime endTime;
 
     public Event(String event, String date, String time, String location) {
         this.event = event;
@@ -85,6 +91,27 @@ public class Event {
         } else {
             System.out.println("Invalid time zone. Please enter EST, CST, MST or PST.");
         }
+    }
+
+    public LocalDate getParsedDate() {
+        return this.parsedDate;
+    }
+    public void setParsedDate(LocalDate date) {
+        this.parsedDate = date;
+    }
+
+    public LocalTime getStartTime() {
+        return this.startTime;
+    }
+    public void setStartTime(LocalTime time) {
+        startTime = time;
+    }
+
+    public LocalTime getEndTime() {
+        return this.endTime;
+    }
+    public void setEndTime(LocalTime time) {
+        endTime = time;
     }
 
     @Override 
