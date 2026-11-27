@@ -18,29 +18,30 @@ import net.fortuna.ical4j.model.property.immutable.ImmutableVersion;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-public class CalendarExport {
-    private Event info; 
-    private ZoneId zone; 
+import java.util.ArrayList;
 
-    public CalendarExport(Event info) {
-        this.info = info;
-        this.zone = ZoneId.of(info.getZone());
-        
+public class CalendarExport {
+    private ArrayList<Event> events;  
+
+    public CalendarExport(ArrayList<Event> events) {
+        this.events = events;
     }
 
-    private ZonedDateTime combinedEvent(LocalDate date, LocalTime time) {
+    private ZonedDateTime combinedEvent(ZoneId zone, LocalDate date, LocalTime time) {
         ZonedDateTime combined = ZonedDateTime.of(date, time, zone);
         return combined;
     }
 
-    public ZonedDateTime startEvent() {
-        return combinedEvent(info.getParsedDate(), info.getStartTime());
+    public ZonedDateTime startEvent(Event info) {
+        ZoneId zone = ZoneId.of(info.getZone());
+        return combinedEvent(zone, info.getParsedDate(), info.getStartTime());
       
     }
 
-    public ZonedDateTime endEvent() {
-        ZonedDateTime ans = combinedEvent(info.getParsedDate(), info.getEndTime());
-        if (!ans.isAfter(startEvent())) {
+    public ZonedDateTime endEvent(Event info) {
+        ZoneId zone = ZoneId.of(info.getZone());
+        ZonedDateTime ans = combinedEvent(zone, info.getParsedDate(), info.getEndTime());
+        if (!ans.isAfter(startEvent(info))) {
             ans = ans.plusDays(1);
         }
         return ans;
@@ -48,7 +49,7 @@ public class CalendarExport {
     }
 
      
-    public VEvent buildEvent() {
+    public VEvent buildEvent(Event info) {
         VEvent ev = new VEvent();
         //create VEvent
 
@@ -56,8 +57,8 @@ public class CalendarExport {
         ev.add(new Location(info.getLocation()));
         //add event title and location
         
-        ev.add(new DtStart<>(startEvent()));
-        ev.add(new DtEnd<>(endEvent()));
+        ev.add(new DtStart<>(startEvent(info)));
+        ev.add(new DtEnd<>(endEvent(info)));
         //add start and end time
 
         ev.add(new RandomUidGenerator().generateUid());
@@ -71,7 +72,11 @@ public class CalendarExport {
         Calendar calendar = new Calendar(); 
         calendar.add(new ProdId("-//PhotoToCalendar//EN"));
         calendar.add(ImmutableVersion.VERSION_2_0);
-        calendar.add(buildEvent());
+
+        for (Event info : events) {
+            calendar.add(buildEvent(info));
+        }
+        
 
         try (FileOutputStream fout = new FileOutputStream(file)) {
             CalendarOutputter calOut = new CalendarOutputter();
