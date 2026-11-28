@@ -21,6 +21,17 @@ import java.util.ArrayList;
 public class App {
     public static void main(String[] args) {
         Scanner myScanner = new Scanner(System.in);
+
+
+
+        File tessFile = new File("tessdata/eng.traineddata");
+        if(!tessFile.exists()) {
+            System.out.println("Tessdata file not found. Run the program from the project folder.");
+            return;
+        }
+
+
+
         String path = "";
         String text = "";
         boolean cont = false;
@@ -30,7 +41,6 @@ public class App {
         String location = "";
         String event = "";
         String zone = "";
-        String zoneID = "";
         Event info = null;
 
         ArrayList<Event> events = new ArrayList<>(); 
@@ -48,7 +58,6 @@ public class App {
                     location = "";
                     event = "";
                     zone = "";
-                    zoneID = "";
 
                     System.out.println("Enter the path to the file containing event information:");
                     path = myScanner.nextLine();
@@ -74,7 +83,7 @@ public class App {
                     if (!cont && !end) {
                         try {
                             text = readImage(path);
-                            if (text.isEmpty() || text.isBlank() || text.equals("")) {
+                            if (text.isBlank()) {
                                 if (askYesNo(myScanner, "Image appears to be blank: Retry?")) {
                                     cont = true; 
                                 } else {
@@ -86,20 +95,29 @@ public class App {
                                 System.out.print("Event name: ");
                                 if (myScanner.hasNextLine()) {
                                     event = myScanner.nextLine().trim();
+                                } else {
+                                    end = true; 
+                                    System.out.println("Exited program.");
                                 }
                             }
 
                             if (!cont && !end) {
+                                //Two different patterns in time: single time and a range
+                                //The system is supposed to add an automatic +1 hr for single times
+                                //Testing the range first so a range doesn't get flagged as a single time 
+
                                 Pattern range = Pattern.compile("(?i)\\b\\d{1,2}\\s*(:\\d{2}\\s*)?(a\\.?m\\.?|p\\.?m\\.?)?\\s*(-|–|—|to)\\s*\\d{1,2}\\s*(:\\d{2}\\s*)?(a\\.?m\\.?|p\\.?m\\.?)");
                                 Pattern single = Pattern.compile("(?i)\\b\\d{1,2}\\s*(:\\d{2}\\s*)?(a\\.?m\\.?|p\\.?m\\.?)");
-                                Matcher m = range.matcher(text);
-                                Matcher m2 = single.matcher(text);
-                                if (m.find()) {
-                                    time = m.group();
-                                    text = text.substring(0, m.start()) + " " + text.substring(m.end());
-                                } else if (m2.find()) {
-                                    time = m2.group();
-                                    text = text.substring(0, m2.start()) + " " + text.substring(m2.end());
+                                Matcher rangeMatcher = range.matcher(text);
+                                Matcher singleMatcher = single.matcher(text);
+
+                                //The text is getting removed so times such as 7-8 pm don't get picked up by the date pattern
+                                if (rangeMatcher.find()) {
+                                    time = rangeMatcher.group();
+                                    text = text.substring(0, rangeMatcher.start()) + " " + text.substring(rangeMatcher.end());
+                                } else if (singleMatcher.find()) {
+                                    time = singleMatcher.group();
+                                    text = text.substring(0, singleMatcher.start()) + " " + text.substring(singleMatcher.end());
                                 } 
 
                                 Pattern d1 = Pattern.compile("\\b\\d{1,2}\\s*/\\s*\\d{1,2}(\\s*/\\s*\\d{1,4})?\\b");
@@ -107,26 +125,26 @@ public class App {
                                 Pattern d3 = Pattern.compile("(?i)\\b\\d{1,2}(st|nd|rd|th)?\\s*(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept|Sep|Oct|Nov|Dec)\\.?(\\s*\\d{1,4})?\\b");
                                 Pattern d4 = Pattern.compile("(?i)\\b(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept|Sep|Oct|Nov|Dec)\\.?\\s*\\d{1,2}(st|nd|rd|th)?(\\s*,?\\s*\\d{1,4})?\\b");
 
-                                Matcher md1 = d1.matcher(text);
-                                Matcher md2 = d2.matcher(text);
-                                Matcher md3 = d3.matcher(text);
-                                Matcher md4 = d4.matcher(text);
+                                Matcher dateMatcher1 = d1.matcher(text);
+                                Matcher dateMatcher2 = d2.matcher(text);
+                                Matcher dateMatcher3 = d3.matcher(text);
+                                Matcher dateMatcher4 = d4.matcher(text);
 
-                                if (md1.find()) {
-                                    date = md1.group();
-                                    text = text.substring(0, md1.start()) + " " + text.substring(md1.end());
+                                if (dateMatcher1.find()) {
+                                    date = dateMatcher1.group();
+                                    text = text.substring(0, dateMatcher1.start()) + " " + text.substring(dateMatcher1.end());
                                     date = date.replaceAll("\\s+", " ");
-                                } else if (md2.find()) {
-                                    date = md2.group();
-                                    text = text.substring(0, md2.start()) + " " + text.substring(md2.end());
+                                } else if (dateMatcher2.find()) {
+                                    date = dateMatcher2.group();
+                                    text = text.substring(0, dateMatcher2.start()) + " " + text.substring(dateMatcher2.end());
                                     date = date.replaceAll("\\s+", " ");
-                                } else if (md3.find()) {
-                                    date = md3.group();
-                                    text = text.substring(0, md3.start()) + " " + text.substring(md3.end());
+                                } else if (dateMatcher3.find()) {
+                                    date = dateMatcher3.group();
+                                    text = text.substring(0, dateMatcher3.start()) + " " + text.substring(dateMatcher3.end());
                                     date = date.replaceAll("\\s+", " ");
-                                } else if (md4.find()){
-                                    date = md4.group();
-                                    text = text.substring(0, md4.start()) + " " + text.substring(md4.end());
+                                } else if (dateMatcher4.find()){
+                                    date = dateMatcher4.group();
+                                    text = text.substring(0, dateMatcher4.start()) + " " + text.substring(dateMatcher4.end());
                                     date = date.replaceAll("\\s+", " ");
                                 } 
 
@@ -134,20 +152,19 @@ public class App {
                                 Pattern l2 = Pattern.compile("@\\s*([^_\\n]+)");
                                 Pattern l3 = Pattern.compile("(?im)^.*\\b(room|hall|rm|lab|building|bldg|center|auditorium|lounge|floor|union|library|st|street|ave|avenue|rd|road|blvd|commons|lobby|atrium|theater|theatre|gallery|cafeteria|gym|studio|suite|ste|plaza|quad|courtyard|stadium|dr|drive|way|ln|lane|ct|court)\\b.*$");
 
-                                Matcher ml1 = l1.matcher(text);
-                                Matcher ml2 = l2.matcher(text);
-                                Matcher ml3 = l3.matcher(text);
+                                Matcher locationMatcher1 = l1.matcher(text);
+                                Matcher locationMatcher2 = l2.matcher(text);
+                                Matcher locationMatcher3 = l3.matcher(text);
 
-                                if (ml1.find()) {
-                                    location = ml1.group(2).trim();
-                                } else if (ml2.find()) {
-                                    location = ml2.group(1).trim();
-                                } else if (ml3.find() && ml3.group().trim().length() < 60) {
-                                    location = ml3.group().trim();
+                                if (locationMatcher1.find()) {
+                                    location = locationMatcher1.group(2).trim();
+                                } else if (locationMatcher2.find()) {
+                                    location = locationMatcher2.group(1).trim();
+                                } else if (locationMatcher3.find() && locationMatcher3.group().trim().length() < 60) {
+                                    location = locationMatcher3.group().trim();
                                 } 
 
                                 info = new Event(event, date, time, location);
-                                zoneID = info.getZone();
                                 zone = info.getAbb();    
                                 dateValidation(info);
                                 timeValidation(info);                        
@@ -318,7 +335,18 @@ public class App {
                 System.out.println("Added \"" + info.getEvent() + "\" (" + events.size() + " event(s) ready).");
             } 
 
-            more = askYesNo(myScanner, "Would you like to add another image?");
+           if (end) {
+            more = false;
+           } else {
+            try {
+                more = askYesNo(myScanner, "Would you like to add another image?");
+            } catch (NoSuchElementException e) {
+                cont = false;
+                end = true;
+                more = false;
+
+            }
+           }
         } while (more);
 
         if (!events.isEmpty()) {
@@ -356,10 +384,13 @@ public class App {
         return input.nextLine().trim().toLowerCase().equals("y");
     }
 
+    //The language file is bundled inside the repo
+    //Anyone can run the app without hardcoding the specific paths 
+    //This is why it must be run from the repo root
     static String readImage(String pathName) throws TesseractException {
         File image = new File(pathName);
         Tesseract tesseract = new Tesseract();
-        tesseract.setDatapath("/opt/homebrew/opt/tesseract/share/tessdata");
+        tesseract.setDatapath("tessdata");
         tesseract.setLanguage("eng");
         tesseract.setVariable("user_defined_dpi", "300");
 
@@ -384,6 +415,9 @@ public class App {
         return "";
 
     }
+
+    //This method doesn't limit past dates for simplicity. 
+    //If a year isn't provided, it assumes the current year 
 
     static String dateValidation(Event info) {
         String fixedDate = info.getDate().replaceAll("(?i)(\\d)(th|st|nd|rd)\\b", "$1");
@@ -434,6 +468,7 @@ public class App {
 
     }
 
+    //Single times are automatically assigned into a one hour range
     static String timeValidation(Event info){
         String fixedTime = info.getTime().toUpperCase().replaceAll("\\.", "");
         fixedTime = fixedTime.replaceAll("\\s+", " ").trim();

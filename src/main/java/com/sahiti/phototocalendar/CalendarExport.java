@@ -38,6 +38,11 @@ public class CalendarExport {
       
     }
 
+    //Add a day when the end is after start to allow for overnight entries
+    //Ex: 11:30 pm to 12:30 pm
+    //Not changing the days would make the end time before the start time, causing an error
+    
+
     public ZonedDateTime endEvent(Event info) {
         ZoneId zone = ZoneId.of(info.getZone());
         ZonedDateTime ans = combinedEvent(zone, info.getParsedDate(), info.getEndTime());
@@ -51,18 +56,18 @@ public class CalendarExport {
      
     public VEvent buildEvent(Event info) {
         VEvent ev = new VEvent();
-        //create VEvent
+       
 
         ev.add(new Summary(info.getEvent()));
         ev.add(new Location(info.getLocation()));
-        //add event title and location
+       
         
         ev.add(new DtStart<>(startEvent(info)));
         ev.add(new DtEnd<>(endEvent(info)));
-        //add start and end time
+     
 
         ev.add(new RandomUidGenerator().generateUid());
-        //add UID
+       
 
         return ev;
 
